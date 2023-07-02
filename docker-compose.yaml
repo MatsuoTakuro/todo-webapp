@@ -21,7 +21,7 @@ services:
         condition: service_healthy
 
   todo-webapp-postgres:
-    image: postgres:12.2-alpine
+    image: postgres:12.2
     container_name: todo-webapp-postgres
     restart: always
     security_opt:
