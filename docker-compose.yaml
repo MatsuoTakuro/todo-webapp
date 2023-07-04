@@ -14,11 +14,11 @@ services:
       - ~/go/pkg:/go/pkg
     ports:
       - 8989:8989
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@todo-webapp-postgres:5432/todo?sslmode=disable
     depends_on:
       todo-webapp-postgres:
         condition: service_healthy
+    env_file:
+      - local.env
 
   todo-webapp-postgres:
     image: postgres:12.2
@@ -26,10 +26,6 @@ services:
     restart: always
     security_opt:
       - "seccomp:unconfined"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: todo
     ports:
       - 5432:5432
     volumes:
@@ -39,3 +35,5 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    env_file:
+      - local.env

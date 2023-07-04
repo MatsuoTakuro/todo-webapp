@@ -2,21 +2,18 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"embed"
 	"errors"
 	"html/template"
 	"io"
 	"io/fs"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dialect/pgdialect"
-	"github.com/uptrace/bun/extra/bundebug"
 
 	_ "github.com/lib/pq"
 )
@@ -73,28 +70,19 @@ func bindUntil(todo *Todo) func([]string) []error {
 	}
 }
 
+var e *echo.Echo
+
 func main() {
-	sqldb, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+
+	db, closeDB, err := setupDB()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer sqldb.Close()
+	defer closeDB()
 
-	db := bun.NewDB(sqldb, pgdialect.New())
-	defer db.Close()
-
-	db.AddQueryHook(bundebug.NewQueryHook(
-		bundebug.WithVerbose(true),
-		bundebug.FromEnv("BUNDEBUG"),
-	))
-
-	ctx := context.Background()
-	_, err = db.NewCreateTable().Model((*Todo)(nil)).IfNotExists().Exec(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	e := echo.New()
+	e = echo.New()
+	e.Logger.SetLevel(log.INFO)
+	e.Logger.SetOutput(os.Stdout)
 
 	e.Renderer = &Template{
 		templates: template.Must(template.New("").
@@ -166,6 +154,8 @@ func main() {
 		}
 		return c.Redirect(http.StatusFound, "/")
 	})
+
+	e.POST("/notify", notifyToDoByMail)
 
 	staticFs, err := fs.Sub(static, "static")
 	if err != nil {
