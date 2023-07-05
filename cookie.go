@@ -22,7 +22,7 @@ func SetCookie(c echo.Context, cookieName cookieName, values string, expires tim
 	c.SetCookie(cookie)
 }
 
-func GetCookie(c echo.Context, cookieName cookieName) string {
+func GetCookieValue(c echo.Context, cookieName cookieName) string {
 	cookie, err := c.Cookie(string(cookieName))
 	if err != nil {
 		return ""

@@ -94,9 +94,10 @@ func main() {
 
 	e.GET("/", func(c echo.Context) error {
 		// get a message from cookie
-		message := GetCookie(c, MESSAGE)
+		message := GetCookieValue(c, MESSAGE)
 		if message != "" {
-			// clear the cookie cuz it's a one-time message
+			// flush a once-used message from cookie
+			// cuz remaining message can be sent from the client-side, rather than rendered from the server-side.
 			ClearCookie(c, MESSAGE)
 		}
 
