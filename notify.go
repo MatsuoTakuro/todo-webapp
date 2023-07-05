@@ -8,6 +8,7 @@ import (
 	"net/mail"
 	"net/smtp"
 	"os"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -26,6 +27,8 @@ func notifyToDoByMail(c echo.Context) error {
 	}
 	if len(todos) == 0 {
 		e.Logger.Info("no todos to notify")
+		message := "Not found incomplete todos to notify"
+		SetCookie(c, MESSAGE, message, time.Now().Add(1*time.Minute)) // expires in 1 minute
 		return c.Redirect(http.StatusSeeOther, "/")
 	}
 
@@ -46,7 +49,7 @@ func notifyToDoByMail(c echo.Context) error {
 		os.Getenv("MAIL_PASSWORD"),
 		os.Getenv("MAIL_AUTHSERVER"),
 	)
-	var messages []string
+	var message string
 	err = smtp.SendMail(
 		os.Getenv("MAIL_SERVER"),
 		smtpAuth,
@@ -55,25 +58,13 @@ func notifyToDoByMail(c echo.Context) error {
 		buf.Bytes())
 	if err != nil {
 		e.Logger.Error(err)
-		messages = append(messages, "Failed to notify todos by mail")
+		message = "Failed to notify todos by mail"
 	} else {
 		e.Logger.Info("notified todos by mail")
-		messages = append(messages, "Notified todos by mail!")
+		message = "Notified todos by mail!"
 	}
+	SetCookie(c, MESSAGE, message, time.Now().Add(1*time.Minute)) // expires in 1 minute
 
-	// Fetch the todos list
-	var all []Todo
-	err = db.NewSelect().Model(&all).Order("created_at").Scan(ctx)
-	if err != nil {
-		e.Logger.Error(err)
-		return c.Render(http.StatusInternalServerError, "index", Data{Errors: []error{err}})
-	}
-
-	// Pass both the messages and the todos list to the template
-	return c.Render(http.StatusOK, "index",
-		Data{
-			Todos:    all,
-			Messages: messages,
-		})
+	return c.Redirect(http.StatusSeeOther, "/")
 
 }

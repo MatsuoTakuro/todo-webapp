@@ -93,16 +93,23 @@ func main() {
 	}
 
 	e.GET("/", func(c echo.Context) error {
+		// get a message from cookie
+		message := GetCookie(c, MESSAGE)
+		if message != "" {
+			// clear the cookie cuz it's a one-time message
+			ClearCookie(c, MESSAGE)
+		}
+
 		var todos []Todo
 		ctx := context.Background()
-		err := db.NewSelect().Model(&todos).Order("created_at").Scan(ctx)
+		err = db.NewSelect().Model(&todos).Order("created_at").Scan(ctx)
 		if err != nil {
 			e.Logger.Error(err)
 			return c.Render(http.StatusBadRequest, "index", Data{
 				Errors: []error{errors.New("Cannot get todos")},
 			})
 		}
-		return c.Render(http.StatusOK, "index", Data{Todos: todos})
+		return c.Render(http.StatusOK, "index", Data{Todos: todos, Messages: []string{message}})
 	})
 
 	e.POST("/", func(c echo.Context) error {
