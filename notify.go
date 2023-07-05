@@ -19,7 +19,10 @@ func notifyToDoByMail(c echo.Context) error {
 	err := db.NewSelect().Model(&todos).Order("created_at").Where("until is not null").Where("done is false").Scan(ctx)
 	if err != nil {
 		e.Logger.Error(err)
-		return c.Render(http.StatusInternalServerError, "index", Data{Errors: []error{err}})
+		return c.Render(http.StatusInternalServerError, "index",
+			Data{
+				Errors: []error{err},
+			})
 	}
 	if len(todos) == 0 {
 		e.Logger.Info("no todos to notify")
@@ -43,6 +46,7 @@ func notifyToDoByMail(c echo.Context) error {
 		os.Getenv("MAIL_PASSWORD"),
 		os.Getenv("MAIL_AUTHSERVER"),
 	)
+	var messages []string
 	err = smtp.SendMail(
 		os.Getenv("MAIL_SERVER"),
 		smtpAuth,
@@ -51,9 +55,25 @@ func notifyToDoByMail(c echo.Context) error {
 		buf.Bytes())
 	if err != nil {
 		e.Logger.Error(err)
-		return c.Render(http.StatusInternalServerError, "index", Data{Errors: []error{err}}) // TODO: resolve error
+		messages = append(messages, "Failed to notify todos by mail")
+	} else {
+		e.Logger.Info("notified todos by mail")
+		messages = append(messages, "Notified todos by mail!")
 	}
 
-	e.Logger.Info("notified todos by mail")
-	return c.Redirect(http.StatusSeeOther, "/")
+	// Fetch the todos list
+	var all []Todo
+	err = db.NewSelect().Model(&all).Order("created_at").Scan(ctx)
+	if err != nil {
+		e.Logger.Error(err)
+		return c.Render(http.StatusInternalServerError, "index", Data{Errors: []error{err}})
+	}
+
+	// Pass both the messages and the todos list to the template
+	return c.Render(http.StatusOK, "index",
+		Data{
+			Todos:    all,
+			Messages: messages,
+		})
+
 }

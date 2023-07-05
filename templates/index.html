@@ -15,6 +15,11 @@
   <p><em class="error">{{.}}</em></p>
 {{end}}
 
+<!-- list messages -->
+{{range .Messages}}
+  <p><em class="message">{{.}}</em></p>
+{{end}}
+
 <!-- list ToDos -->
 <ul class="todo-overview-list">
 {{range .Todos}}

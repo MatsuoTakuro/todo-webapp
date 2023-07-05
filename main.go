@@ -52,8 +52,9 @@ type Todo struct {
 }
 
 type Data struct {
-	Todos  []Todo
-	Errors []error
+	Todos    []Todo
+	Errors   []error
+	Messages []string
 }
 
 func bindUntil(todo *Todo) func([]string) []error {
