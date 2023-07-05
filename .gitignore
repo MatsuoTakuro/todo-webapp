@@ -23,3 +23,4 @@ go.work
 postgres-data
 .vscode
 /tmp
+local.env
